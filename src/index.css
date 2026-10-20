@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+/* Brand palette taken from the logo: polished gold on ivory marble */
+@theme {
+  --color-gold-50: #fbf6ea;
+  --color-gold-100: #f4e8c8;
+  --color-gold-200: #e9d29a;
+  --color-gold-300: #dcb866;
+  --color-gold-400: #cfa042;
+  --color-gold-500: #b8862b;
+  --color-gold-600: #9a6b1f;
+  --color-gold-700: #7a521b;
+  --color-gold-800: #5c3e17;
+  --color-ivory: #fdf9f0;
+  --color-cream: #f6eedd;
+  --color-ink: #2b2118;
+
+  --font-display: "Cinzel", serif;
+  --font-sans: "Jost", system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply font-sans text-ink antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@utility gold-text {
+  background: linear-gradient(135deg, #7a521b, #cfa042 45%, #9a6b1f 70%, #b8862b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility gold-btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium tracking-wider text-white uppercase shadow-md transition hover:brightness-110 active:scale-[.98];
+  background: linear-gradient(135deg, #9a6b1f, #cfa042 50%, #9a6b1f);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}

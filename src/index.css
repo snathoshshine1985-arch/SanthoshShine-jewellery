@@ -15,7 +15,7 @@
   --color-cream: #f6eedd;
   --color-ink: #2b2118;
 
-  --font-display: "Cinzel", serif;
+  --font-display: "Playfair Display", serif;
   --font-sans: "Jost", system-ui, sans-serif;
 }
 
@@ -50,4 +50,19 @@
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
+}
+
+/* Loading placeholder shown only while an API request is in flight */
+@utility skeleton {
+  background: linear-gradient(100deg, var(--color-cream) 30%, var(--color-gold-50) 50%, var(--color-cream) 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
 }

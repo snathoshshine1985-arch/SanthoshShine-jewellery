@@ -76,20 +76,6 @@ const allProducts = () => {
 }
 
 export const api = {
-  // Hero slides are the latest products
-  getBanners: () =>
-    allProducts().then((items) =>
-      items.slice(0, 3).map((p) => ({
-        id: p.id,
-        eyebrow: [p.categoryName, p.subcategory].filter(Boolean).join(' · '),
-        title: p.name,
-        price: p.salePrice ?? p.price,
-        mrp: p.salePrice ? p.price : null,
-        image: p.images[0],
-        cta: { label: 'Shop Now', to: `/product/${p.slug}` },
-      })),
-    ),
-
   // Unique categories (with their subcategories) from the products, using the first product image as the cover
   getCategories: () =>
     allProducts().then((items) => {

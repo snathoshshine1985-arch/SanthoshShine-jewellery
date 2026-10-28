@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import ProductCard from '../components/ProductCard'
+import ProductCard, { ProductCardSkeleton } from '../components/ProductCard'
 import SectionTitle from '../components/SectionTitle'
 import { api, useApi } from '../services/api'
 
@@ -19,7 +19,7 @@ export default function Shop() {
   const sub = params.get('sub') ?? undefined
   const [sort, setSort] = useState('featured')
 
-  const { data: categories } = useApi(api.getCategories)
+  const { data: categories, loading: catLoading } = useApi(api.getCategories)
   const { data: products, loading } = useApi(() => api.getProducts({ category, sub, tag, q }), [category, sub, tag, q])
   const sorted = useMemo(() => [...(products ?? [])].sort(sorters[sort]), [products, sort])
 
@@ -33,6 +33,7 @@ export default function Shop() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div className="no-scrollbar flex gap-2 overflow-x-auto">
           <Link to="/shop" className={`shrink-0 rounded-full px-4 py-1.5 text-sm ${!category ? 'bg-gold-500 text-white' : 'border border-gold-300 text-gold-700'}`}>All</Link>
+          {catLoading && [88, 72, 96].map((w) => <div key={w} className="skeleton h-8 shrink-0 rounded-full" style={{ width: w }} aria-hidden="true" />)}
           {categories?.map((c) => (
             <Link key={c.id} to={`/shop/${c.slug}`} className={`shrink-0 rounded-full px-4 py-1.5 text-sm ${category === c.slug ? 'bg-gold-500 text-white' : 'border border-gold-300 text-gold-700'}`}>
               {c.name}
@@ -49,7 +50,7 @@ export default function Shop() {
 
       {loading ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 md:gap-6">
-          {Array.from({ length: 8 }, (_, n) => <div key={n} className="aspect-[3/4] animate-pulse rounded-2xl bg-cream" />)}
+          {Array.from({ length: 8 }, (_, n) => <ProductCardSkeleton key={n} />)}
         </div>
       ) : sorted.length ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 md:gap-6">

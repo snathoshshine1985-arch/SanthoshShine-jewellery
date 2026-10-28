@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { FiCheckCircle, FiCreditCard, FiLock, FiTag, FiTruck } from 'react-icons/fi'
 import SectionTitle from '../components/SectionTitle'
@@ -40,6 +40,7 @@ export default function Checkout() {
   const [couponMsg, setCouponMsg] = useState('')
   const [status, setStatus] = useState(null)
   const [done, setDone] = useState(null)
+  const pending = useRef(null) // Razorpay order created for this checkout, reused if the customer retries
 
   // "Buy it now" passes a single product; otherwise check out the whole cart
   const buyNow = state?.buyNow
@@ -61,7 +62,11 @@ export default function Checkout() {
             ? 'Your payment is being confirmed with Razorpay – we will contact you once it is verified.'
             : 'Please keep cash ready at delivery.'}
         </SectionTitle>
-        {done.paymentId && <p className="mb-6 text-xs text-ink/50">Payment ID: {done.paymentId}</p>}
+        {done.paymentId && (
+          <p className="mb-6 text-xs text-ink/50">
+            {done.orderId && <>Order ref: {done.orderId} · </>}Payment ID: {done.paymentId}
+          </p>
+        )}
         <Link to="/shop" className="gold-btn">Continue Shopping</Link>
       </section>
     )
@@ -101,8 +106,14 @@ export default function Checkout() {
         return finish({ total: saved.total })
       }
 
-      const [ready, pay] = await Promise.all([loadRazorpay(), api.createPayment(order)])
-      if (!ready) throw new Error('Could not load the payment window. Please check your connection.')
+      // Retrying after closing Razorpay reopens the same order – no duplicate submission or BuildFree order
+      const key = JSON.stringify(order)
+      if (pending.current?.key !== key) {
+        const [ready, created] = await Promise.all([loadRazorpay(), api.createPayment(order)])
+        if (!ready) throw new Error('Could not load the payment window. Please check your connection.')
+        pending.current = { key, pay: created }
+      }
+      const { pay } = pending.current
 
       new window.Razorpay({
         key: pay.keyId,
@@ -114,10 +125,15 @@ export default function Checkout() {
         image: logo,
         prefill: { name: customer.name, email: customer.email, contact: customer.phone },
         theme: { color: '#b8862b' },
-        // The order is already saved (createPayment submits it first). This callback is not proof of
-        // payment on its own – BuildFree confirms it through the Razorpay webhook.
-        handler: (resp) => finish({ total: pay.total, paymentId: resp.razorpay_payment_id }),
-        modal: { ondismiss: () => setStatus('Payment was not completed. You can try again.') },
+        // Razorpay passes notes through to its webhook events – lets the webhook find the saved order
+        notes: { submissionId: pay.submissionId, buildFreeOrderId: pay.orderId },
+        // The order form is already saved (createPayment submits it first). This callback is not proof of
+        // payment – BuildFree's webhook confirms it, so the success screen says it is being confirmed.
+        handler: (resp) => {
+          pending.current = null
+          finish({ total: pay.total, paymentId: resp.razorpay_payment_id, orderId: pay.orderId })
+        },
+        modal: { ondismiss: () => setStatus('Payment was not completed yet. You can try paying again.') },
       }).open()
     } catch (err) {
       fail(err)
@@ -191,7 +207,13 @@ export default function Checkout() {
             {status === 'sending' ? 'Please wait…' : method === 'online' ? `Pay ${formatPrice(total)}` : 'Place Order'}
           </button>
           {status && status !== 'sending' && <p className="mt-2 text-center text-sm text-red-600">{status}</p>}
-          <p className="mt-3 flex items-center justify-center gap-1 text-xs text-ink/50"><FiLock /> Your details are only used for delivery</p>
+          <p className="mt-3 text-center text-xs text-ink/50">
+            By placing this order you agree to our{' '}
+            <Link to="/policies?tab=terms" className="underline underline-offset-2 hover:text-gold-700">Terms</Link>,{' '}
+            <Link to="/policies?tab=privacy" className="underline underline-offset-2 hover:text-gold-700">Privacy</Link> and{' '}
+            <Link to="/policies?tab=refund" className="underline underline-offset-2 hover:text-gold-700">Refund Policy</Link>.
+          </p>
+          <p className="mt-2 flex items-center justify-center gap-1 text-xs text-ink/50"><FiLock /> Your details are only used for delivery</p>
         </aside>
       </div>
     </section>

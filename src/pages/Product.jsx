@@ -18,7 +18,36 @@ export default function Product() {
   const [active, setActive] = useState(0)
   const [qty, setQty] = useState(1)
 
-  if (loading) return <div className="mx-auto my-12 h-96 max-w-7xl animate-pulse rounded-2xl bg-cream" />
+  // Skeleton in the same layout as the page, shown only while the product request is in flight
+  if (loading)
+    return (
+      <section className="mx-auto max-w-7xl px-4 py-10" aria-busy="true" aria-label="Loading product">
+        <div className="skeleton mb-6 h-3 w-48 rounded" />
+        <div className="grid gap-10 lg:grid-cols-[1.5fr_1fr] lg:gap-16">
+          <div>
+            <div className="skeleton mx-auto aspect-square max-w-2xl rounded-2xl" />
+            <div className="mx-auto mt-4 flex max-w-2xl gap-3">
+              {[0, 1, 2].map((n) => <div key={n} className="skeleton h-24 w-28 rounded-xl" />)}
+            </div>
+          </div>
+          <div className="max-w-md space-y-4">
+            <div className="skeleton h-3 w-40 rounded" />
+            <div className="skeleton h-9 w-full rounded" />
+            <div className="skeleton h-9 w-2/3 rounded" />
+            <div className="skeleton mt-6 h-7 w-1/3 rounded" />
+            <div className="skeleton h-3 w-3/5 rounded" />
+            <div className="skeleton mt-6 h-12 w-40 rounded-full" />
+            <div className="space-y-3 pt-6">
+              <div className="skeleton h-12 w-full rounded-full" />
+              <div className="skeleton h-12 w-full rounded-full" />
+            </div>
+            <div className="space-y-3 pt-6">
+              {[90, 75, 60, 80].map((w) => <div key={w} className="skeleton h-4 rounded" style={{ width: `${w}%` }} />)}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
   if (!product)
     return (
       <div className="py-24 text-center">
@@ -120,7 +149,13 @@ export default function Product() {
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
             {reviewsLoading ? (
-              <div className="h-24 animate-pulse rounded-2xl bg-cream" />
+              [0, 1].map((n) => (
+                <div key={n} className="space-y-3 rounded-2xl border border-gold-100 bg-white/90 p-5 shadow-sm" aria-hidden="true">
+                  <div className="skeleton h-4 w-24 rounded" />
+                  <div className="skeleton h-3 w-5/6 rounded" />
+                  <div className="skeleton h-3 w-1/4 rounded" />
+                </div>
+              ))
             ) : reviews?.length ? (
               reviews.map((r) => (
                 <figure key={r.id} className="rounded-2xl border border-gold-100 bg-white/90 p-5 shadow-sm">

@@ -28,7 +28,7 @@ The browser never talks to the CMS directly. Every call goes through the serverl
 | `GET /api/cms?resource=ecommerce` | `GET /ecommerce` (products) |
 | `GET /api/cms?resource=review` | `GET /review` |
 | `GET /api/cms?resource=coupon&code=X` | `GET /couponcode`, checked on the server. Returns only `{ valid, code, amount }` |
-| `POST /api/cms?action=pay` `{ items, coupon, customer }` | `POST /forms/paymentform/submit`, then `POST /api/v1/order` with the submission id |
+| `POST /api/cms?action=pay` `{ items, coupon, customer }` | `POST /forms/paymentform/submit`, then `POST /api/v1/order` with `recordId`, `submissionId`, `amount` |
 | `POST /api/cms?form=paymentform` `{ items, coupon, customer }` | `POST /forms/paymentform/submit` |
 | `POST /api/cms?form=review` | `POST /forms/review/submit` |
 
@@ -39,7 +39,11 @@ The browser never talks to the CMS directly. Every call goes through the serverl
 1. On checkout, the browser sends only product ids, quantities, the coupon code and the delivery details.
 2. `api/cms.js` prices the order from the CMS (sale price × qty, coupon checked on the server, then shipping).
 3. It **saves the order** in the `paymentform` form first (`finalpricenumber` = that server-calculated total).
-4. It then creates the BuildFree order: `recordId` = the saved submission's id, `amount` = the same total in paise.
+4. It then creates the BuildFree order (`POST /api/v1/order`) with `recordId` = the product's record id (the first
+   product for a multi-item cart), `submissionId` = the saved submission's id (from the submit response
+   `{ success, message, submissionId }`), and `amount` = the same total in paise. BuildFree's `data.orderId` is kept
+   as the order reference. If the customer closes Razorpay and retries, the same order is reopened. The browser also
+   adds `notes.submissionId` to the Razorpay payment, so the webhook can find and update that submission.
 5. The browser opens Razorpay Checkout with the returned `razorpayOrderId`, `amount`, `currency` and `keyId`.
 6. BuildFree updates the payment to PENDING, CAPTURED or FAILED through the Razorpay webhook. Treat that as the
    source of truth, not the browser callback.

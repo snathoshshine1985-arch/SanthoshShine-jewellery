@@ -7,7 +7,7 @@ import { api, useApi } from '../services/api'
 
 export default function Header() {
   const { count } = useCart()
-  const { data: categories } = useApi(api.getCategories)
+  const { data: categories, loading } = useApi(api.getCategories)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -23,7 +23,10 @@ export default function Header() {
   const links = [
     { to: '/', label: 'Home' },
     { to: '/shop?tag=new', label: 'New Arrivals' },
-    ...(categories ?? []).slice(0, 5).map((c) => ({ to: `/shop/${c.slug}`, label: c.name, subs: c.subcategories })),
+    // placeholders keep the category slots in place while the API loads
+    ...(loading
+      ? [64, 88, 72].map((w) => ({ to: `skeleton-${w}`, skeleton: w }))
+      : (categories ?? []).slice(0, 5).map((c) => ({ to: `/shop/${c.slug}`, label: c.name, subs: c.subcategories }))),
     { to: '/shop?tag=sale', label: 'Sale' },
   ]
 
@@ -44,7 +47,7 @@ export default function Header() {
       {/* Main bar */}
       <div className={`border-b border-gold-200/60 bg-ivory/95 backdrop-blur transition-shadow ${scrolled ? 'shadow-md' : ''}`}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <button className="text-2xl text-gold-700 lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
+          <button className="text-2xl text-gold-700 xl:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
             <FiMenu />
           </button>
 
@@ -56,8 +59,9 @@ export default function Header() {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-4 lg:flex xl:gap-6">
+          <nav className="hidden items-center gap-5 xl:flex">
             {links.map((l) => {
+              if (l.skeleton) return <div key={l.to} className="skeleton h-4 rounded" style={{ width: l.skeleton }} aria-hidden="true" />
               const link = (
                 <NavLink
                   to={l.to}
@@ -153,7 +157,7 @@ export default function Header() {
       </div>
 
       {/* Mobile drawer */}
-      <div className={`fixed inset-0 z-50 lg:hidden ${open ? '' : 'pointer-events-none'}`}>
+      <div className={`fixed inset-0 z-50 xl:hidden ${open ? '' : 'pointer-events-none'}`}>
         <div className={`absolute inset-0 bg-black/40 transition-opacity ${open ? 'opacity-100' : 'opacity-0'}`} onClick={() => setOpen(false)} />
         <aside className={`absolute inset-y-0 left-0 w-72 bg-ivory p-6 shadow-xl transition-transform ${open ? '' : '-translate-x-full'}`}>
           <div className="mb-6 flex items-center justify-between">
@@ -161,7 +165,9 @@ export default function Header() {
             <button className="text-2xl text-gold-700" onClick={() => setOpen(false)} aria-label="Close menu"><FiX /></button>
           </div>
           <nav className="flex flex-col divide-y divide-gold-100">
-            {links.map((l) => (
+            {links.map((l) => l.skeleton ? (
+              <div key={l.to} className="py-3" aria-hidden="true"><div className="skeleton h-4 rounded" style={{ width: l.skeleton + 40 }} /></div>
+            ) : (
               <div key={l.to}>
                 <div className="flex items-center justify-between">
                   <Link to={l.to} onClick={() => setOpen(false)} className="flex-1 py-3 text-ink/80 capitalize hover:text-gold-600">

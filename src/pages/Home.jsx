@@ -2,26 +2,34 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FiArrowRight, FiAward, FiRefreshCw, FiShield, FiTruck } from 'react-icons/fi'
 import { FaStar } from 'react-icons/fa'
-import ProductCard from '../components/ProductCard'
+import ProductCard, { ProductCardSkeleton } from '../components/ProductCard'
 import SectionTitle from '../components/SectionTitle'
 import marble from '../assets/marble.png'
-import { api, formatPrice, useApi } from '../services/api'
+import necklace1 from '../assets/hero/necklace-1.webp'
+import necklace2 from '../assets/hero/necklace-2.webp'
+import necklace3 from '../assets/hero/necklace-3.webp'
+import necklace4 from '../assets/hero/necklace-4.webp'
+import { api, useApi } from '../services/api'
 
 const Empty = () => <p className="py-10 text-center text-sm text-ink/50">No data available</p>
 
+const heroImages = [
+  { src: necklace1, alt: 'Kemp stone dancer necklace on a bust' },
+  { src: necklace2, alt: 'Gold filigree necklace' },
+  { src: necklace3, alt: 'Floral gold necklace' },
+  { src: necklace4, alt: 'Pearl and leaf necklace with earrings' },
+]
+
 function Hero() {
-  const { data: featured } = useApi(api.getBanners)
-  const { data: categories } = useApi(api.getCategories)
+  const { data: categories, loading: catLoading } = useApi(api.getCategories)
   const [i, setI] = useState(0)
-  const total = featured?.length ?? 0
+  const total = heroImages.length
 
   useEffect(() => {
     if (total < 2) return
     const t = setInterval(() => setI((n) => (n + 1) % total), 5000)
     return () => clearInterval(t)
   }, [total])
-
-  const f = featured?.[i]
 
   return (
     <section className="relative overflow-hidden" style={{ backgroundImage: `url(${marble})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
@@ -51,63 +59,63 @@ function Hero() {
             </Link>
           </div>
 
-          {categories?.length > 0 && (
+          {catLoading ? (
+            <div className="mt-10" aria-hidden="true">
+              <div className="skeleton mx-auto h-3 w-32 rounded md:mx-0" />
+              <div className="mt-3 flex flex-wrap justify-center gap-2 md:justify-start">
+                {[96, 80, 112].map((w) => <div key={w} className="skeleton h-8 rounded-full" style={{ width: w }} />)}
+              </div>
+            </div>
+          ) 
+          : categories?.length > 0 && (
             <div className="mt-10">
-              <p className="text-[11px] tracking-[0.3em] text-ink/40 uppercase">Shop by category</p>
+              {/* <p className="text-[11px] tracking-[0.3em] text-ink/40 uppercase">Shop by category</p>
               <div className="mt-3 flex flex-wrap justify-center gap-2 md:justify-start">
                 {categories.map((c) => (
                   <Link key={c.id} to={`/shop/${c.slug}`} className="rounded-full border border-gold-200 bg-white/70 px-4 py-1.5 text-sm text-ink/75 capitalize transition hover:border-gold-500 hover:text-gold-700">
                     {c.name}
                   </Link>
                 ))}
-              </div>
+              </div> */}
             </div>
-          )}
+          )
+          }
         </div>
 
-        {f && (
-          <div className="relative mx-auto w-full max-w-sm">
-            {/* temple-arch frame */}
-            <div className="absolute -inset-4 rounded-t-full border border-gold-300/80" />
-            <div className="absolute -inset-2 rounded-t-full border border-gold-200/60" />
-            <Link to={f.cta.to} className="relative block overflow-hidden rounded-t-full bg-cream shadow-2xl shadow-gold-900/20">
-              <img key={f.image} src={f.image} alt={f.title} className="aspect-[3/4] w-full animate-[fadeUp_.6s_ease] object-cover transition duration-700 hover:scale-105" />
-            </Link>
-            <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-3xl text-gold-500">✦</span>
+        {/* Necklace showcase – temple-arch frame with the transparent necklaces fitted inside, crossfading */}
+        <div className="relative mx-auto mb-8 w-full max-w-sm">
+          <div className="absolute -inset-4 rounded-t-full border border-gold-300/80" />
+          <div className="absolute -inset-2 rounded-t-full border border-gold-200/60" />
+          <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-3xl text-gold-500">✦</span>
 
-            {/* floating product card */}
-            <Link
-              key={f.id}
-              to={f.cta.to}
-              className="absolute -bottom-6 left-2 flex max-w-[85%] animate-[fadeUp_.6s_ease] items-center gap-4 rounded-2xl border border-gold-100 bg-white/95 p-4 shadow-xl backdrop-blur sm:-left-10"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-[10px] tracking-[0.25em] text-gold-600 uppercase">{f.eyebrow}</p>
-                <p className="truncate font-display text-sm font-semibold">{f.title}</p>
-                <p className="mt-1 text-sm">
-                  <span className="font-semibold text-gold-700">{formatPrice(f.price)}</span>
-                  {f.mrp && <span className="ml-2 text-xs text-ink/40 line-through">{formatPrice(f.mrp)}</span>}
-                </p>
-              </div>
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gold-500 text-white"><FiArrowRight /></span>
-            </Link>
-
-            {total > 1 && (
-              <div className="absolute top-1/2 -right-6 flex -translate-y-1/2 flex-col gap-3 sm:-right-14">
-                {featured.map((x, n) => (
-                  <button
-                    key={x.id}
-                    onClick={() => setI(n)}
-                    aria-label={`Show ${x.title}`}
-                    className={`h-12 w-12 overflow-hidden rounded-full border-2 shadow-md transition ${n === i ? 'scale-110 border-gold-500' : 'border-white opacity-70 hover:opacity-100'}`}
-                  >
-                    <img src={x.image} alt="" className="h-full w-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="relative aspect-[3/4] overflow-hidden rounded-t-full bg-gradient-to-b from-white/70 via-ivory/60 to-cream/80 shadow-2xl shadow-gold-900/15">
+            {/* image area sits below the arch curve so every necklace fits fully inside the frame */}
+            <div className="absolute inset-x-[10%] top-[20%] bottom-[5%]">
+              {heroImages.map((img, n) => (
+                <img
+                  key={img.src}
+                  src={img.src}
+                  alt={img.alt}
+                  fetchPriority={n === 0 ? 'high' : 'low'}
+                  className={`absolute inset-0 h-full w-full object-contain drop-shadow-[0_18px_22px_rgba(92,62,23,0.25)] transition-all duration-1000 ${
+                    n === i ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
-        )}
+
+          <div className="absolute -bottom-10 left-1/2 flex -translate-x-1/2 gap-2">
+            {heroImages.map((img, n) => (
+              <button
+                key={img.src}
+                onClick={() => setI(n)}
+                aria-label={`Show ${img.alt}`}
+                className={`h-2 rounded-full transition-all ${n === i ? 'w-7 bg-gold-500' : 'w-2 bg-gold-300 hover:bg-gold-400'}`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -120,7 +128,14 @@ function Collections() {
       <SectionTitle eyebrow="Discover" title="Our Collections" />
       {!loading && !categories?.length && <Empty />}
       <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-6">
-        {categories?.map((c) => (
+        {loading &&
+          Array.from({ length: 6 }, (_, n) => (
+            <div key={n} aria-hidden="true">
+              <div className="skeleton mx-auto aspect-square rounded-full border-4 border-white shadow-lg" />
+              <div className="skeleton mx-auto mt-3 h-4 w-2/3 rounded" />
+            </div>
+          ))}
+        {!loading && categories?.map((c) => (
           <Link key={c.id} to={`/shop/${c.slug}`} className="group text-center">
             <div className="mx-auto aspect-square overflow-hidden rounded-full border-4 border-white shadow-lg ring-2 ring-gold-300 transition group-hover:ring-gold-500">
               <img src={c.image} alt={c.name} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
@@ -162,7 +177,7 @@ function ProductTabs() {
       </div>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 md:gap-6">
         {loading
-          ? Array.from({ length: 8 }, (_, n) => <div key={n} className="aspect-[3/4] animate-pulse rounded-2xl bg-cream" />)
+          ? Array.from({ length: 8 }, (_, n) => <ProductCardSkeleton key={n} />)
           : products?.slice(0, 8).map((p) => <ProductCard key={p.id} product={p} />)}
       </div>
       {!loading && !products?.length && <Empty />}
@@ -203,7 +218,17 @@ function Reviews() {
       <SectionTitle eyebrow="Testimonials" title="Loved by Our Customers" />
       {!loading && !reviews?.length && <Empty />}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {reviews?.slice(0, 8).map((r) => (
+        {loading &&
+          Array.from({ length: 4 }, (_, n) => (
+            <div key={n} className="space-y-3 rounded-2xl border border-gold-100 bg-white/90 p-6 shadow-sm" aria-hidden="true">
+              <div className="skeleton h-4 w-24 rounded" />
+              <div className="skeleton h-4 w-3/4 rounded" />
+              <div className="skeleton h-3 w-full rounded" />
+              <div className="skeleton h-3 w-5/6 rounded" />
+              <div className="skeleton mt-4 h-4 w-1/3 rounded" />
+            </div>
+          ))}
+        {!loading && reviews?.slice(0, 8).map((r) => (
           <figure key={r.id} className="rounded-2xl border border-gold-100 bg-white/90 p-6 shadow-sm">
             <div className="flex gap-1 text-gold-400">
               {Array.from({ length: 5 }, (_, n) => <FaStar key={n} className={n < r.rating ? '' : 'opacity-25'} />)}

@@ -40,3 +40,18 @@ export default function ProductCard({ product }) {
     </div>
   )
 }
+
+// Same shape as the card, shown while products are loading
+export function ProductCardSkeleton() {
+  return (
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-gold-100 bg-white/90 shadow-sm" aria-hidden="true">
+      <div className="skeleton aspect-square" />
+      <div className="space-y-2 p-4">
+        <div className="skeleton h-4 w-4/5 rounded" />
+        <div className="skeleton h-4 w-1/2 rounded" />
+        <div className="skeleton mt-3 h-5 w-1/3 rounded" />
+        <div className="skeleton mt-3 h-8 w-full rounded-full" />
+      </div>
+    </div>
+  )
+}

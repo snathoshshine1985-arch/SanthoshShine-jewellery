@@ -83,14 +83,11 @@ const saveOrder = async (order) => {
       finalpricenumber: total,
     }),
   })
-  return { status, body, total }
+  return { status, body, total, lines }
 }
 
-// The submit response's id for the new submission (the CMS calls it submissionId)
-const submissionIdOf = (body) => {
-  const d = body?.data ?? body?.submission ?? body
-  return d?.submissionId ?? d?.recordId ?? d?.id ?? body?.submissionId ?? null
-}
+// The CMS answers a form submit with { success, message, submissionId }
+const submissionIdOf = (body) => body?.submissionId ?? null
 
 export default async function handler(req, res) {
   const { resource, code, form, action } = req.query
@@ -106,8 +103,10 @@ export default async function handler(req, res) {
       return res.status(status).json(body)
     }
 
-    // Online payment: save the order first, then create the BuildFree/Razorpay order for that
-    // submission – recordId = the saved submission's id, amount = server-calculated total in paise
+    // Online payment: save the order form first, then create the BuildFree/Razorpay order (POST /api/v1/order):
+    //   recordId     = the product's record id (first product for a multi-item cart)
+    //   submissionId = the saved paymentform submission, so the webhook can update it
+    //   amount       = server-calculated total in paise
     if (req.method === 'POST' && action === 'pay') {
       const saved = await saveOrder(req.body ?? {})
       if (saved.status >= 400 || saved.body.success === false)
@@ -115,10 +114,10 @@ export default async function handler(req, res) {
       const submissionId = submissionIdOf(saved.body)
       if (!submissionId) return res.status(502).json({ success: false, message: 'Order saved, but the CMS did not return its record id' })
 
-      const { status, body } = await createPaymentOrder({ recordId: submissionId, amount: saved.total * 100, currency: 'INR' })
+      const { status, body } = await createPaymentOrder({ recordId: saved.lines[0].id, submissionId, amount: saved.total * 100, currency: 'INR' })
       if (!body.success) return res.status(status >= 400 ? status : 502).json({ success: false, message: body.message ?? 'Could not start the payment' })
-      const { razorpayOrderId, amount, currency, keyId } = body.data
-      return res.status(200).json({ success: true, submissionId, total: saved.total, razorpayOrderId, amount, currency, keyId })
+      const { orderId, razorpayOrderId, amount, currency, keyId } = body.data
+      return res.status(200).json({ success: true, submissionId, orderId, total: saved.total, razorpayOrderId, amount, currency, keyId })
     }
 
     // Cash on Delivery: just save the order
